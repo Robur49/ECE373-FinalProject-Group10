@@ -1,0 +1,5 @@
+# Group 10 Project
+
+Welcome to the repository for Group 10. 
+
+This repository will host our collaborative coursework throughout the semester, with contributions from all team members.
