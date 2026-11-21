@@ -31,7 +31,7 @@ public class WordToken {
     }
 
     public int sourceStart() {
-        return sourceStart; // Used when retrieving the original style from StyledText.
+        return sourceStart; // Used to find the original character formatting.
     }
 
     public boolean breakBefore() {

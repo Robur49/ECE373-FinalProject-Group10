@@ -6,7 +6,7 @@
 //------------------------------------------------------
 package render;
 
-import model.TextStyle;
+import document.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -6,114 +6,148 @@
 //------------------------------------------------------
 package render;
 
-import model.Document; // just guessing what these will be named
-import model.Paragraph;
-import model.Section;
-import model.StyledText;
-import model.TextRun;
-import model.TextStyle;
+import document.Document;
+import document.Paragraph;
+import document.Section;
+import document.TextRun;
+import document.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Handles the document layout so plain and markup rendering can share the same code.
+// Shared rendering code used by both the plain-text and markup views.
 abstract class AbstractRenderer implements Renderer {
 
-    private static final Pattern WORD = Pattern.compile("\\S+"); // Match groups of non-space characters.
+    private static final Pattern WORD = Pattern.compile("\\S+"); // Find each word in a paragraph.
 
     @Override
     public final String render(Document document, int width, LineBreakingStrategy strategy) {
-        LineBreakingStrategy.validateWidth(width); // Reject widths that cannot fit any characters.
-        StringBuilder output = new StringBuilder(); // Build the final output a line at a time.
+        Objects.requireNonNull(document, "document"); // Make sure a document was provided.
+        Objects.requireNonNull(strategy, "strategy"); // Make sure a wrapping method was selected.
+        LineBreakingStrategy.validateWidth(width); // Reject invalid line widths.
 
-        for (Section section : document.sections()) {
-            renderSection(section, 1, width, strategy, output); // Begin at the top section level.
+        StringBuilder output = new StringBuilder(); // Store the displayed document.
+        for (Section section : document.getSections()) {
+            renderSection(section, 1, width, strategy, output); // Start at the outermost section.
         }
-        return output.toString().stripTrailing();
+        return output.toString().stripTrailing(); // Return the finished display as a String.
     }
 
     private void renderSection(Section section, int depth, int width,
                                LineBreakingStrategy strategy, StringBuilder output) {
-        String indent = "  ".repeat(Math.max(0, depth - 1)); // Add indentation for nested sections.
-        String titlePrefix = titlePrefix(depth);
-        String textPrefix = indent + "  "; // Indent paragraphs below their section title.
+        String indent = "  ".repeat(Math.max(0, depth - 1)); // Indent nested sections.
+        String textPrefix = indent + "  "; // Indent paragraphs below the title.
 
-        renderText(section.title(), titlePrefix, textPrefix, width, strategy, output); // Print the title before its children.
+        renderText(section.getStyledTitle(), titlePrefix(depth), textPrefix,
+                width, strategy, output); // Display the styled section title.
 
-        for (Object child : section.children()) {
-            if (child instanceof Paragraph) {
-                Paragraph paragraph = (Paragraph) child;
-                renderText(paragraph.text(), textPrefix, textPrefix, width, strategy, output); // Print the paragraph using the selected view.
-            }
-            else if (child instanceof Section) {
-                Section subsection = (Section) child;
-                renderSection(subsection, depth + 1, width, strategy, output); // Handle nested sections.
-            }
+        // Matthew's Section stores paragraphs and subsections in separate lists.
+        for (Paragraph paragraph : section.getParagraphs()) {
+            renderText(paragraph, textPrefix, textPrefix,
+                    width, strategy, output); // Display each paragraph in this section.
+        }
+
+        for (Section child : section.getSubsections()) {
+            renderSection(child, depth + 1, width, strategy, output); // Display nested sections recursively.
         }
     }
 
-    private void renderText(StyledText text, String firstPrefix, String otherPrefix,
+    private void renderText(Paragraph paragraph, String firstPrefix, String otherPrefix,
                             int width, LineBreakingStrategy strategy, StringBuilder output) {
-        List<WordToken> words = getWords(text.plainText(), width); // Convert the paragraph into words with source positions.
+        String text = paragraph.getText(); // Read the paragraph without changing it.
+        List<WordToken> words = getWords(text, width); // Remember each word's original position.
 
         if (words.isEmpty()) {
-            output.append(firstPrefix).append('\n'); // Keep an empty paragraph as a blank output line.
+            output.append(firstPrefix).append('\n'); // Display an empty paragraph as a blank line.
             return;
         }
 
-        List<List<WordToken>> lines = strategy.breakLines(words, width); // Let the chosen algorithm decide where lines end.
+        List<TextRun> runs = paragraph.getRuns(); // Each run stores one section of shared formatting.
+        int[] runStarts = new int[runs.size()]; // Remember where each run starts in the paragraph.
+        int characterPosition = 0;
+        for (int i = 0; i < runs.size(); i++) {
+            runStarts[i] = characterPosition; // Store the character offset of this run.
+            characterPosition += runs.get(i).length(); // Find the offset of the following run.
+        }
+
+        List<List<WordToken>> lines = strategy.breakLines(words, width); // Wrap words using the chosen method.
         boolean firstLine = true;
 
         for (List<WordToken> line : lines) {
             if (firstLine) {
-                output.append(firstPrefix); // Only the first line gets the title/initial prefix.
+                output.append(firstPrefix); // First line uses the normal paragraph or title prefix.
                 firstLine = false;
             }
             else {
-                output.append(otherPrefix); // Continuation lines use the normal indentation.
+                output.append(otherPrefix); // Additional lines use the continuation indentation.
             }
 
             boolean firstWord = true;
             for (WordToken word : line) {
                 if (!firstWord) {
-                    output.append(' '); // Separate words that share the same output line.
+                    output.append(' '); // Add a space between words on the same line.
                 }
                 firstWord = false;
 
-                // Get the formatted characters for this word, even if it has multiple styles.
-                int start = word.sourceStart();
-                int end = start + word.text().length();
-                StyledText selected = text.slice(start, end); // Recover the original styles for this one word.
-
-                for (TextRun run : selected.runs()) {
-                    output.append(encode(run.text(), run.style())); // Plain and markup views handle the run differently.
-                }
+                // Display the word with its original formatting, even if it spans multiple runs.
+                appendStyledWord(word, runs, runStarts, output);
             }
-            output.append('\n');
+            output.append('\n'); // Move to the next wrapped line.
         }
     }
 
+    private void appendStyledWord(WordToken word, List<TextRun> runs,
+                                  int[] runStarts, StringBuilder output) {
+        int start = word.sourceStart(); // Position where the word started in the source text.
+        int end = start + word.text().length(); // End of that word, not including the next character.
+        int runIndex = findRun(runStarts, start); // Find the style run containing the first character.
+
+        while (start < end) {
+            TextRun run = runs.get(runIndex); // Get the text and formatting for this run.
+            int runEnd = runStarts[runIndex] + run.length(); // Last position covered by the run.
+            int pieceEnd = Math.min(end, runEnd); // Only display the part inside this word.
+            String piece = run.getText().substring(start - runStarts[runIndex],
+                    pieceEnd - runStarts[runIndex]); // Extract the original characters.
+            output.append(encode(piece, run.getStyle())); // Let the renderer show or hide the style.
+            start = pieceEnd; // Continue at the next part of the word.
+            runIndex++; // If more text remains, it belongs to the next run.
+        }
+    }
+
+    private int findRun(int[] starts, int position) {
+        int low = 0;
+        int high = starts.length - 1;
+        while (low <= high) {
+            int middle = (low + high) / 2; // Look in the middle instead of searching every run.
+            if (starts[middle] <= position) {
+                low = middle + 1; // The matching run is here or later.
+            }
+            else {
+                high = middle - 1; // Look earlier in the list.
+            }
+        }
+        return high; // Index of the last run starting at or before this position.
+    }
+
     private List<WordToken> getWords(String text, int width) {
-        List<WordToken> words = new ArrayList<>();
-        Matcher matcher = WORD.matcher(text); // Find each word and its offset in the source text.
+        List<WordToken> words = new ArrayList<>(); // Save the words with their source positions.
+        Matcher matcher = WORD.matcher(text); // Search for groups of non-whitespace characters.
 
         while (matcher.find()) {
-            String word = matcher.group();
-
-            // Split long words so that we do not go past the line width.
+            String word = matcher.group(); // Get the next word.
             for (int offset = 0; offset < word.length(); offset += width) {
-                int end = Math.min(offset + width, word.length()); // Do not make a word piece wider than the limit.
+                int end = Math.min(offset + width, word.length()); // Split words too long for one line.
                 String part = word.substring(offset, end);
-                boolean newLine = offset > 0; // Continued pieces of a long word must start a new line.
-                words.add(new WordToken(part, matcher.start() + offset, newLine)); // Remember where the piece came from for formatting.
+                boolean breakBefore = offset > 0; // Continued word pieces must start on a new line.
+                words.add(new WordToken(part, matcher.start() + offset, breakBefore));
             }
         }
         return words;
     }
 
-    // Each renderer decides how section titles are marked in its view.
-    protected abstract String titlePrefix(int depth);
+    protected abstract String titlePrefix(int depth); // Let each view choose its section-title labels.
 
-    protected abstract String encode(String text, TextStyle style);
+    protected abstract String encode(String text, TextStyle style); // Let each view handle formatting.
 }

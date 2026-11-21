@@ -22,7 +22,7 @@ public final class GreedyLineBreaker implements LineBreakingStrategy {
         LineBreakingStrategy.validateWidth(width);
 
         List<List<WordToken>> lines = new ArrayList<>(); // Save each finished output line.
-        List<WordToken> currentLine = new ArrayList<>(); // Start collecting the next line. // Words that currently fit on one line.
+        List<WordToken> currentLine = new ArrayList<>(); // Collect words for the current line.
         int usedWidth = 0; // Number of characters already used on this line.
 
         for (WordToken word : words) {

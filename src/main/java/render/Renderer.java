@@ -6,7 +6,7 @@
 //------------------------------------------------------
 package render;
 
-import model.Document; // just guessing what these will be named
+import document.Document;
 
 // This lets us switch between different ways of displaying the document.
 public interface Renderer {

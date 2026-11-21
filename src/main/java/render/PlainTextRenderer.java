@@ -6,7 +6,7 @@
 //------------------------------------------------------
 package render;
 
-import model.TextStyle;
+import document.TextStyle;
 
 // Shows the document without any formatting labels.
 public final class PlainTextRenderer extends AbstractRenderer {
