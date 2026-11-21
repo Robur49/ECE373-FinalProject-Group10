@@ -26,27 +26,31 @@ public final class MarkupRenderer extends AbstractRenderer {
     @Override
     protected String encode(String text, TextStyle style) {
         if (style.equals(TextStyle.DEFAULT)) {
-            return text; // Leave text alone when it uses the default style.
+            return text; // No formatting needed if the style is default.
         }
 
-        List<String> labels = new ArrayList<>(); // Collect only the styles that are different from the default.
+        List<String> labels = new ArrayList<>(); // Store the formatting labels.
 
-        if (style.bold()) {
-            labels.add("bold"); // Show that this run is bold.
-        }
-        if (style.italic()) {
-            labels.add("italic"); // Show that this run is italic.
-        }
-        if (!style.fontName().equals(TextStyle.DEFAULT.fontName())) {
-            labels.add("font=" + style.fontName()); // Show the custom font name.
-        }
-        if (style.fontSize() != TextStyle.DEFAULT.fontSize()) {
-            labels.add("size=" + style.fontSize()); // Show the custom font size.
-        }
-        if (!style.color().equals(TextStyle.DEFAULT.color())) {
-            labels.add("color=" + style.color()); // Show the custom color.
+        if (style.isBold()) {
+            labels.add("bold"); // Check if the text is bold.
         }
 
-        return "{" + String.join(",", labels) + ":" + text + "}"; // Example: {bold,italic:Hello}.
+        if (style.isItalic()) {
+            labels.add("italic"); // Check if the text is italic.
+        }
+
+        if (!style.getFontName().equals(TextStyle.DEFAULT.getFontName())) {
+            labels.add("font=" + style.getFontName()); // Show the custom font.
+        }
+
+        if (style.getFontSize() != TextStyle.DEFAULT.getFontSize()) {
+            labels.add("size=" + style.getFontSize()); // Show the custom font size.
+        }
+
+        if (!style.getColor().equals(TextStyle.DEFAULT.getColor())) {
+            labels.add("color=" + style.getColor()); // Show the custom text color.
+        }
+
+        return "{" + String.join(",", labels) + ":" + text + "}"; // Example: {bold:Hello}.
     }
 }
