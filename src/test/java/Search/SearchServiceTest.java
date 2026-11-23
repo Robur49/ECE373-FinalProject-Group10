@@ -59,4 +59,18 @@ class SearchServiceTest {
         assertEquals(List.of("Section [0] Paragraph 0 at offset 2: \"man\""), test);
     }
 
+    @Test
+    void wholeWordRejectsPartialMatch() {
+        Document doc = new Document();
+
+        Section section = doc.addSection("animals");
+        section.addParagraph("woman");
+
+        SearchService service = new SearchService();
+
+        List<String> test = service.Find(doc, "man", true);
+        assertEquals(List.of(), test);
+    }
+
+
 }
