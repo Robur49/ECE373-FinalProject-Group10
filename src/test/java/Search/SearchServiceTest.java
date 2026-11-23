@@ -219,5 +219,4 @@ class SearchServiceTest {
         assertEquals("Old nested text", subParagraph.getText());
     }
 
-
 }

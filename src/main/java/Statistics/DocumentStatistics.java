@@ -1,4 +1,4 @@
-class DocumentStatistics {
+class DocumentStatistics implements DocumentChangeListener {
 
     private int wordCount;
     private int characterCount;
@@ -8,7 +8,6 @@ class DocumentStatistics {
         
     }
     public String getStatistics(Document doc){
-
     }
 
 }
