@@ -149,5 +149,75 @@ class SearchServiceTest {
         assertEquals(List.of("Section [0] Paragraph 0 at offset 8: \"hotdog\""), test);
     }
 
+    @Test
+    void replaceFirstChangesOnlyFirstMatchAndUndoes() {
+        Document doc = new Document();
+        Section section = doc.addSection("My dog");
+        Paragraph paragraph = section.addParagraph("The dog barked");
+
+        SearchService service = new SearchService();
+        EditCommand cmd = service.replaceFirst(doc, "dog", "cat");
+
+        cmd.execute();
+        assertEquals("My cat", section.getStyledTitle().getText());
+        assertEquals("The dog barked", paragraph.getText());
+
+        cmd.undo();
+        assertEquals("My dog", section.getStyledTitle().getText());
+        assertEquals("The dog barked", paragraph.getText());
+    }
+
+    @Test
+    void replaceFirstReturnsNullWhenNoMatch() {
+        Document doc = new Document();
+        Section section = doc.addSection("Animals");
+        section.addParagraph("The dog barked");
+
+        SearchService service = new SearchService();
+        EditCommand cmd = service.replaceFirst(doc, "elephant", "lion");
+
+        assertNull(cmd);
+    }
+
+    @Test
+    void replaceAllHandlesChangingWordLengths() {
+        Document doc = new Document();
+        Section section = doc.addSection("Pets");
+        Paragraph paragraph = section.addParagraph("one cat and one cat");
+
+        SearchService service = new SearchService();
+        CompositeCommand cmd = service.replaceAll(doc, "cat", "elephant");
+
+        cmd.execute();
+        assertEquals("one elephant and one elephant", paragraph.getText());
+
+        cmd.undo();
+        assertEquals("one cat and one cat", paragraph.getText());
+    }
+
+    @Test
+    void replaceAllAcrossTitlesParagraphsAndSubsectionsAndUndoes() {
+        Document doc = new Document();
+        Section topSection = doc.addSection("Old Title");
+        Paragraph topParagraph = topSection.addParagraph("Old body text");
+        Section subSection = topSection.addSubsection("Old Subheading");
+        Paragraph subParagraph = subSection.addParagraph("Old nested text");
+
+        SearchService service = new SearchService();
+        CompositeCommand cmd = service.replaceAll(doc, "Old", "New");
+
+        cmd.execute();
+        assertEquals("New Title", topSection.getStyledTitle().getText());
+        assertEquals("New body text", topParagraph.getText());
+        assertEquals("New Subheading", subSection.getStyledTitle().getText());
+        assertEquals("New nested text", subParagraph.getText());
+
+        cmd.undo();
+        assertEquals("Old Title", topSection.getStyledTitle().getText());
+        assertEquals("Old body text", topParagraph.getText());
+        assertEquals("Old Subheading", subSection.getStyledTitle().getText());
+        assertEquals("Old nested text", subParagraph.getText());
+    }
+
 
 }
