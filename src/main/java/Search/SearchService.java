@@ -142,6 +142,8 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
 
         return null;
     }
+
+
     public CompositeCommand replaceAll(Document doc, String target, String replacement){
         Objects.requireNonNull(doc, "doc");
         Objects.requireNonNull(target, "target");
