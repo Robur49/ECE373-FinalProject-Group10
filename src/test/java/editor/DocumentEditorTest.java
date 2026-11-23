@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 /**
  * Verifies that DocumentEditor coordinates document changes
@@ -130,4 +132,90 @@ class DocumentEditorTest {
         assertThrows(NullPointerException.class,
                 () -> editor.executeCommand(null));
     }
+
+
+    /**
+     * Verifies that edits before and after checkpoint restoration
+     * remain undoable and redoable in the correct order.
+     */
+    @Test
+    void testCheckpointRestoreUndoRedo() {
+        DocumentEditor editor = new DocumentEditor();
+
+        Document original = editor.getDocument();
+        Paragraph paragraph = original.addSection("Introduction")
+                .addParagraph("Original");
+
+        // Save the document before making any edits.
+        editor.saveCheckpoint("draft");
+
+        // Modify the original document through command history.
+        editor.executeCommand(
+                EditCommand.insert(paragraph, 8, " edited"));
+
+        assertEquals("Original edited", paragraph.getText());
+
+        // Restore the saved checkpoint as a separate document.
+        editor.restoreCheckpoint("draft");
+
+        Document restored = editor.getDocument();
+        Paragraph restoredParagraph =
+                restored.getSection(0).getParagraph(0);
+
+        assertNotSame(original, restored);
+        assertEquals("Original", restoredParagraph.getText());
+
+        // Make an additional edit to the restored document.
+        editor.executeCommand(
+                EditCommand.insert(restoredParagraph, 8, " revised"));
+
+        assertEquals("Original revised", restoredParagraph.getText());
+
+        // Undo the edit performed after restoration.
+        editor.undo();
+        assertEquals("Original", restoredParagraph.getText());
+
+        // Undo the restoration to recover the previous document.
+        editor.undo();
+        assertSame(original, editor.getDocument());
+        assertEquals("Original edited", paragraph.getText());
+
+        // Undo the original edit.
+        editor.undo();
+        assertEquals("Original", paragraph.getText());
+
+        // Redo the original edit and checkpoint restoration.
+        editor.redo();
+        assertEquals("Original edited", paragraph.getText());
+
+        editor.redo();
+        assertSame(restored, editor.getDocument());
+
+        // Redo the edit made after restoring the checkpoint.
+        editor.redo();
+        assertEquals("Original revised", restoredParagraph.getText());
+    }
+
+
+    /**
+     * Verifies that restoring an unknown checkpoint does not
+     * replace the document or create a history entry.
+     */
+    @Test
+    void testMissingCheckpoint() {
+        DocumentEditor editor = new DocumentEditor();
+        Document original = editor.getDocument();
+
+        // Attempt to restore a checkpoint that was never saved.
+        assertThrows(IllegalArgumentException.class,
+                () -> editor.restoreCheckpoint("missing"));
+
+        // The active document should remain unchanged.
+        assertSame(original, editor.getDocument());
+
+        // The unsuccessful restoration should not enter history.
+        assertThrows(IllegalStateException.class, editor::undo);
+    }
+
+
 }
