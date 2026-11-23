@@ -6,11 +6,21 @@
 
 package Search;
 
+import command.CompositeCommand;
+import command.EditCommand;
+import document.Document;
+import document.Paragraph;
+import document.Section;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
+
+/**
+ * Provides document searching and text replacement operations.
+ */
+public class SearchService {
 
 public List<String> Find(Document doc, String query, boolean wholeWord) {
     Objects.requireNonNull(doc, "doc");
@@ -101,7 +111,11 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
             String titleText = currentSection.getStyledTitle().getText();
             int idx = titleText.indexOf(target, 0);
             if (idx != -1) {
-                return new EditCommand(doc, "REPLACE", currentPath + ":title", idx, target.length(), replacement);
+                return EditCommand.replace(
+                        currentSection.getStyledTitle(),
+                        idx,
+                        idx + target.length(),
+                        replacement);
             }
 
             // 2. Check body paragraphs in order
@@ -110,7 +124,11 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
                 String pText = paragraphs.get(p).getText();
                 idx = pText.indexOf(target, 0);
                 if (idx != -1) {
-                    return new EditCommand(doc, "REPLACE", currentPath + ":" + p, idx, target.length(), replacement);
+                    return EditCommand.replace(
+                            paragraphs.get(p),
+                            idx,
+                            idx + target.length(),
+                            replacement);
                 }
             }
 
@@ -151,8 +169,11 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
             int offsetShift = 0;
             int idx = titleText.indexOf(target, 0);
             while (idx != -1) {
-                composite.addCommand(new EditCommand(
-                        doc, "REPLACE", currentPath + ":title", idx + offsetShift, target.length(), replacement));
+                composite.addCommand(EditCommand.replace(
+                        currentSection.getStyledTitle(),
+                        idx + offsetShift,
+                        idx + offsetShift + target.length(),
+                        replacement));
                 offsetShift += replacement.length() - target.length();
                 idx = titleText.indexOf(target, idx + target.length());
             }
@@ -164,8 +185,11 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
                 offsetShift = 0;
                 idx = pText.indexOf(target, 0);
                 while (idx != -1) {
-                    composite.addCommand(new EditCommand(
-                            doc, "REPLACE", currentPath + ":" + p, idx + offsetShift, target.length(), replacement));
+                    composite.addCommand(EditCommand.replace(
+                            paragraphs.get(p),
+                            idx + offsetShift,
+                            idx + offsetShift + target.length(),
+                            replacement));
                     offsetShift += replacement.length() - target.length();
                     idx = pText.indexOf(target, idx + target.length());
                 }

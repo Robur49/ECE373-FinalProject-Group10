@@ -1,4 +1,4 @@
-package Search
+package Search;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -14,9 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-
+/**
+ * Contains unit tests for SearchService.
+ */
 class SearchServiceTest {
 
-        
-    }
+    //tests to be added soon
+
 }
