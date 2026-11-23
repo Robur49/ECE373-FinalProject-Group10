@@ -175,6 +175,98 @@ public class DocumentEditor {
         return Objects.requireNonNull(path, "Section path cannot be null").clone();
     }
 
+    /** Creates a top-level section as an undoable, macro-recordable action. */
+    public void addSection(String title) {
+        requireTitle(title);
+        executeAndRecord(() -> new Command() {
+            private Document target;
+            private Section created;
+            private int index;
+
+            @Override
+            public void execute() {
+                if (created == null) {
+                    target = document;
+                    created = new Section(title);
+                    index = target.getSections().size();
+                }
+                target.insertSection(index, created);
+            }
+
+            @Override
+            public void undo() {
+                target.removeSection(index);
+            }
+        });
+    }
+
+    /** Creates a nested section under the specified parent section. */
+    public void addSubsection(int[] parentPath, String title) {
+        requireTitle(title);
+        int[] path = pathCopy(parentPath);
+        executeAndRecord(() -> new Command() {
+            private Section parent;
+            private Section created;
+            private int index;
+
+            @Override
+            public void execute() {
+                if (created == null) {
+                    parent = document.findSection(path);
+                    created = new Section(title);
+                    index = parent.getSubsections().size();
+                }
+                parent.insertSubsection(index, created);
+            }
+
+            @Override
+            public void undo() {
+                parent.removeSubsection(index);
+            }
+        });
+    }
+
+    /** Appends a paragraph to the specified section, recording the change. */
+    public void addParagraph(int[] sectionPath, String text) {
+        Objects.requireNonNull(text, "Paragraph text cannot be null");
+        int[] path = pathCopy(sectionPath);
+        executeAndRecord(() -> new Command() {
+            private Section parent;
+            private Paragraph created;
+            private int index;
+
+            @Override
+            public void execute() {
+                if (created == null) {
+                    parent = document.findSection(path);
+                    created = new Paragraph(text);
+                    index = parent.getParagraphs().size();
+                }
+                parent.insertParagraph(index, created);
+            }
+
+            @Override
+            public void undo() {
+                parent.removeParagraph(index);
+            }
+        });
+    }
+
+    /** Validates a user-supplied section title. */
+    private static void requireTitle(String title) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Section title cannot be blank");
+        }
+    }
+
+    /** Formats a section title using the existing undoable formatting command. */
+    public void formatTitle(int[] sectionPath, int start, int end,
+                            UnaryOperator<TextStyle> operation) {
+        int[] path = pathCopy(sectionPath);
+        executeAndRecord(() -> EditCommand.format(
+                document.findSection(path).getStyledTitle(), start, end, operation));
+    }
+
     /** Inserts text as one undoable, macro-recordable action. */
     public void insertText(int[] sectionPath, int paragraphIndex,
                            int position, String text) {

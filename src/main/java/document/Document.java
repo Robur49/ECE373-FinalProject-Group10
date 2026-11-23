@@ -14,6 +14,14 @@ public final class Document {
         sections.add(section);
         return section;
     }
+    /** Inserts an existing section, preserving its identity for undo and redo. */
+    public void insertSection(int index, Section section) {
+        sections.add(index, Objects.requireNonNull(section, "section"));
+    }
+    /** Removes a section at its zero-based position. */
+    public void removeSection(int index) {
+        sections.remove(index);
+    }
     /** Returns the top-level sections without exposing a mutable list. */ public List<Section> getSections() { return Collections.unmodifiableList(sections); }
     /** Returns a top-level section at a zero-based index. */ public Section getSection(int index) { return sections.get(index); }
     /** Returns the total number of paragraphs, including nested sections. */ public int countParagraphs() {
