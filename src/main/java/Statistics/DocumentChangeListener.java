@@ -4,9 +4,6 @@ import document.Document;
 
 
 public interface DocumentChangeListener {
-
-    void onDocumentChangeListener(Document doc) {
-    }
-
-    }
+    void onDocumentChanged(Document doc);
+}
 
