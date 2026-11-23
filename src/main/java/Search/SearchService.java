@@ -125,6 +125,60 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
         return null;
     }
     public CompositeCommand replaceAll(Document doc, String target, String replacement){
+        Objects.requireNonNull(doc, "doc");
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(replacement, "replacement");
+        if (target.isEmpty()) {
+            throw new IllegalArgumentException("Target text cannot be empty");
+        }
 
+        CompositeCommand composite = new CompositeCommand();
+        Deque<Section> sectionStack = new ArrayDeque<>();
+        Deque<String> pathStack = new ArrayDeque<>();
+
+        List<Section> topSections = doc.getSections();
+        for (int i = topSections.size() - 1; i >= 0; i--) {
+            sectionStack.push(topSections.get(i));
+            pathStack.push(String.valueOf(i));
+        }
+
+        while (!sectionStack.isEmpty()) {
+            Section currentSection = sectionStack.pop();
+            String currentPath = pathStack.pop();
+
+            // 1. Collect all replacements in the section title
+            String titleText = currentSection.getStyledTitle().getText();
+            int offsetShift = 0;
+            int idx = titleText.indexOf(target, 0);
+            while (idx != -1) {
+                composite.addCommand(new EditCommand(
+                        doc, "REPLACE", currentPath + ":title", idx + offsetShift, target.length(), replacement));
+                offsetShift += replacement.length() - target.length();
+                idx = titleText.indexOf(target, idx + target.length());
+            }
+
+            // 2. Collect all replacements in each body paragraph
+            List<Paragraph> paragraphs = currentSection.getParagraphs();
+            for (int p = 0; p < paragraphs.size(); p++) {
+                String pText = paragraphs.get(p).getText();
+                offsetShift = 0;
+                idx = pText.indexOf(target, 0);
+                while (idx != -1) {
+                    composite.addCommand(new EditCommand(
+                            doc, "REPLACE", currentPath + ":" + p, idx + offsetShift, target.length(), replacement));
+                    offsetShift += replacement.length() - target.length();
+                    idx = pText.indexOf(target, idx + target.length());
+                }
+            }
+
+            // 3. Push nested subsections
+            List<Section> subsections = currentSection.getSubsections();
+            for (int s = subsections.size() - 1; s >= 0; s--) {
+                sectionStack.push(subsections.get(s));
+                pathStack.push(currentPath + "." + s);
+            }
+        }
+
+        return composite;
     }
 }
