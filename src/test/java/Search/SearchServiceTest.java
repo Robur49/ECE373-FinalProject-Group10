@@ -102,5 +102,52 @@ class SearchServiceTest {
                 test);
     }
 
+    @Test
+    void findMatchInSectionTitle() {
+        Document doc = new Document();
+        doc.addSection("Morning Routine");
+
+        SearchService service = new SearchService();
+        List<String> test = service.Find(doc, "Morning", true);
+
+        assertEquals(List.of("Section [0] Title at offset 0: \"Morning\""), test);
+    }
+
+    @Test
+    void findMatchesInNestedSubsections() {
+        Document doc = new Document();
+        Section topSection = doc.addSection("Chapter 1");
+
+        Section subSection = topSection.addSubsection("Section 1.1");
+        subSection.addParagraph("First target");
+
+        Section subSubSection = subSection.addSubsection("Section 1.1.1");
+        subSubSection.addParagraph("Second target");
+
+        SearchService service = new SearchService();
+        List<String> test = service.Find(doc, "target", true);
+
+        assertEquals(
+                List.of(
+                        "Section [0.0] Paragraph 0 at offset 6: \"target\"",
+                        "Section [0.0.0] Paragraph 0 at offset 7: \"target\""),
+                test);
+    }
+
+    @Test
+    void findWordSplitAcrossFormattingRuns() {
+        Document doc = new Document();
+        Section section = doc.addSection("Lunch");
+        Paragraph paragraph = section.addParagraph("I ate a hotdog");
+
+        // Bold "hot" (indices 8..11) while leaving "dog" plain so the word spans two TextRuns
+        paragraph.formatRange(8, 11, new TextStyle(true, false, false));
+
+        SearchService service = new SearchService();
+        List<String> test = service.Find(doc, "hotdog", true);
+
+        assertEquals(List.of("Section [0] Paragraph 0 at offset 8: \"hotdog\""), test);
+    }
+
 
 }
