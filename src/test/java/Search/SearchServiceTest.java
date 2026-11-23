@@ -85,5 +85,22 @@ class SearchServiceTest {
         assertEquals(List.of(), test);
     }
 
+    @Test
+    void FindRepeatingWholeWord() {
+        Document doc = new Document();
+
+        Section section = doc.addSection("Routine");
+        section.addParagraph("I woke up this morning. woke");
+
+        SearchService service = new SearchService();
+
+        List<String> test = service.Find(doc, "woke", true);
+        assertEquals(
+                List.of(
+                        "Section [0] Paragraph 0 at offset 2: \"woke\"",
+                        "Section [0] Paragraph 0 at offset 24: \"woke\""),
+                test);
+    }
+
 
 }
