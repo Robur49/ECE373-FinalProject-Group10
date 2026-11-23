@@ -7,6 +7,8 @@ import command.EditCommand;
 import document.Document;
 import document.Paragraph;
 import document.Section;
+import editor.DocumentEditor;
+
 
 
 public class DocumentStatistics implements DocumentChangeListener {
