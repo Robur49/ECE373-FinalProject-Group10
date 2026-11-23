@@ -25,6 +25,14 @@ public final class Section {
         subsections.add(section);
         return section;
     }
+    /** Inserts a subsection at a specified position for undo and redo. */
+    public void insertSubsection(int index, Section section) {
+        subsections.add(index, Objects.requireNonNull(section, "section"));
+    }
+    /** Removes a subsection at a specified position. */
+    public void removeSubsection(int index) {
+        subsections.remove(index);
+    }
     /** Returns paragraphs without allowing list mutation. */ public List<Paragraph> getParagraphs() { return Collections.unmodifiableList(paragraphs); }
     /** Returns nested sections without allowing list mutation. */ public List<Section> getSubsections() { return Collections.unmodifiableList(subsections); }
     /** Returns a paragraph at its zero-based index. */ public Paragraph getParagraph(int index) { return paragraphs.get(index); }

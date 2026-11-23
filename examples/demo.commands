@@ -1,0 +1,16 @@
+# Script example; all indices are zero-based.
+section "Introduction"
+paragraph 0 "Object-oriented design helps create reusable software."
+section "Results"
+paragraph 1 "This program is ready for testing."
+format 0 0 0 15 bold on
+format-title 0 0 12 size 16
+checkpoint "before-results-edit"
+replace-all "program" "system"
+renderer markup
+wrap greedy
+width 50
+show
+stats
+undo
+redo
