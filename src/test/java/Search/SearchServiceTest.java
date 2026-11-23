@@ -72,5 +72,18 @@ class SearchServiceTest {
         assertEquals(List.of(), test);
     }
 
+    @Test
+    void caseSensitive() {
+        Document doc = new Document();
+
+        Section section = doc.addSection("Schedule");
+        section.addParagraph("Routine");
+
+        SearchService service = new SearchService();
+
+        List<String> test = service.Find(doc, "routine", false);
+        assertEquals(List.of(), test);
+    }
+
 
 }
