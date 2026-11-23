@@ -77,6 +77,52 @@ public List<String> Find(Document doc, String query, boolean wholeWord) {
 
 
     public EditCommand replaceFirst(Document doc, String target, String replacement){
+        Objects.requireNonNull(doc, "doc");
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(replacement, "replacement");
+        if (target.isEmpty()) {
+            throw new IllegalArgumentException("Target text cannot be empty");
+        }
+
+        Deque<Section> sectionStack = new ArrayDeque<>();
+        Deque<String> pathStack = new ArrayDeque<>();
+
+        List<Section> topSections = doc.getSections();
+        for (int i = topSections.size() - 1; i >= 0; i--) {
+            sectionStack.push(topSections.get(i));
+            pathStack.push(String.valueOf(i));
+        }
+
+        while (!sectionStack.isEmpty()) {
+            Section currentSection = sectionStack.pop();
+            String currentPath = pathStack.pop();
+
+            // 1. Check section title first
+            String titleText = currentSection.getStyledTitle().getText();
+            int idx = titleText.indexOf(target, 0);
+            if (idx != -1) {
+                return new EditCommand(doc, "REPLACE", currentPath + ":title", idx, target.length(), replacement);
+            }
+
+            // 2. Check body paragraphs in order
+            List<Paragraph> paragraphs = currentSection.getParagraphs();
+            for (int p = 0; p < paragraphs.size(); p++) {
+                String pText = paragraphs.get(p).getText();
+                idx = pText.indexOf(target, 0);
+                if (idx != -1) {
+                    return new EditCommand(doc, "REPLACE", currentPath + ":" + p, idx, target.length(), replacement);
+                }
+            }
+
+            // 3. Push nested subsections
+            List<Section> subsections = currentSection.getSubsections();
+            for (int s = subsections.size() - 1; s >= 0; s--) {
+                sectionStack.push(subsections.get(s));
+                pathStack.push(currentPath + "." + s);
+            }
+        }
+
+        return null;
     }
     public CompositeCommand replaceAll(Document doc, String target, String replacement){
 
