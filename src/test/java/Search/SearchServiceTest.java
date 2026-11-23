@@ -46,4 +46,17 @@ class SearchServiceTest {
         assertEquals(List.of("Section [0] Paragraph 0 at offset 0: \"I woke up this morning.\""), test);
     }
 
+    @Test
+    void findSubstring() {
+        Document doc = new Document();
+
+        Section section = doc.addSection("animals");
+        section.addParagraph("woman");
+
+        SearchService service = new SearchService();
+
+        List<String> test = service.Find(doc, "man", false);
+        assertEquals(List.of("Section [0] Paragraph 0 at offset 2: \"man\""), test);
+    }
+
 }
