@@ -7,7 +7,14 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /** Section with an editable title, paragraphs, and arbitrarily nested subsections. */
-public final class Section {
+public final class Section implements DocumentElement {
+    // Returns all paragraphs and subsections as document elements.
+    public List<DocumentElement> getChildren() {
+        List<DocumentElement> children = new ArrayList<>();
+        children.addAll(paragraphs);
+        children.addAll(subsections);
+        return Collections.unmodifiableList(children);
+    }
     private final Paragraph title;
     private final List<Paragraph> paragraphs = new ArrayList<>();
     private final List<Section> subsections = new ArrayList<>();
