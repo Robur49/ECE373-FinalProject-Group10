@@ -61,7 +61,7 @@ class DocumentStatisticsTest {
 
         Section section = doc.addSection("Title"); // 1 word, 5 chars
         section.addParagraph("One two"); // 2 words, 7 chars, 1 paragraph
-        stats.OnDocumentChanged(doc);
+        stats.onDocumentChanged(doc);
 
         assertEquals("Words: 3 | Characters: 12 | Paragraphs: 1", stats.getStatistics(doc));
     }
