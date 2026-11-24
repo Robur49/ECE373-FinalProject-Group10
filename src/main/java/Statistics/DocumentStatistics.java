@@ -1,4 +1,4 @@
-package Statistics
+package Statistics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -18,7 +18,7 @@ public class DocumentStatistics implements DocumentChangeListener {
     private int paragraphCount;
 
     @Override
-    public void OnDocumentChanged(Document doc) {
+    public void onDocumentChanged(Document doc) {
         wordCount = 0;
         characterCount = 0;
         paragraphCount = 0;
@@ -59,7 +59,7 @@ public class DocumentStatistics implements DocumentChangeListener {
     }
 
     public String getStatistics(Document doc) {
-        OnDocumentChanged(doc);
+        onDocumentChanged(doc);
         return "Words: " + wordCount
                 + " | Characters: " + characterCount
                 + " | Paragraphs: " + paragraphCount;
