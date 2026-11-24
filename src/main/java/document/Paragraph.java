@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /** Editable paragraph that preserves character formatting. Offsets are zero-based and ranges are [start,end). */
-public final class Paragraph {
+public final class Paragraph implements DocumentElement {
     private final List<TextRun> runs = new ArrayList<>();
     /** Creates an empty paragraph. */ public Paragraph() { }
     /** Creates a paragraph with default formatting. */ public Paragraph(String text) { insertText(0, text); }

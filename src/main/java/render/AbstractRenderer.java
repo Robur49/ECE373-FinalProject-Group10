@@ -7,6 +7,7 @@
 package render;
 
 import document.Document;
+import document.DocumentElement;
 import document.Paragraph;
 import document.Section;
 import document.TextRun;
@@ -43,14 +44,18 @@ abstract class AbstractRenderer implements Renderer {
         renderText(section.getStyledTitle(), titlePrefix(depth), textPrefix,
                 width, strategy, output); // Display the styled section title.
 
-        // Matthew's Section stores paragraphs and subsections in separate lists.
-        for (Paragraph paragraph : section.getParagraphs()) {
-            renderText(paragraph, textPrefix, textPrefix,
-                    width, strategy, output); // Display each paragraph in this section.
-        }
-
-        for (Section child : section.getSubsections()) {
-            renderSection(child, depth + 1, width, strategy, output); // Display nested sections recursively.
+        // Traverse paragraphs and subsections using the common DocumentElement interface.
+        for (DocumentElement element : section.getChildren()) {
+            if (element instanceof Paragraph) {
+                Paragraph paragraph = (Paragraph) element; // Treat the element as a paragraph.
+                renderText(paragraph, textPrefix, textPrefix,
+                        width, strategy, output); // Display the paragraph.
+            }
+            else if (element instanceof Section) {
+                Section child = (Section) element; // Treat the element as a subsection.
+                renderSection(child, depth + 1, width,
+                        strategy, output); // Recursively display the nested section.
+            }
         }
     }
 
