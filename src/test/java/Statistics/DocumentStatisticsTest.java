@@ -72,4 +72,24 @@ class DocumentStatisticsTest {
 
         assertEquals("Words: 0 | Characters: 0 | Paragraphs: 0", stats.getStatistics(null));
     }
+    
+// Final test case to cover the 100,000-character capacity requirement
+    @Test
+    void handlesHundredThousandCharacterCapacityRequirement() {
+        // Set up a fresh document and add a section ("Capacity" = 1 word, 8 chars)
+        Document doc = new Document();
+        Section section = doc.addSection("Capacity");
+
+        // Loop 4,400 times to repeat a 23-character paragraph ("word1 word2 word3 word4")
+        // so the 100,000-character mark is passed (4,400 * 23 = 101,200 chars)
+        for (int i = 0; i < 4400; i++) {
+            section.addParagraph("word1 word2 word3 word4");
+        }
+
+        // Create the statistics object to calculate the totals for the document
+        DocumentStatistics stats = new DocumentStatistics();
+
+        // Check that the final word, character, and paragraph counts match what is expected
+        assertEquals("Words: 17601 | Characters: 101208 | Paragraphs: 4400", stats.getStatistics(doc));
+    }
 }
